@@ -1070,7 +1070,7 @@ mod tests {
         let datatype = md_array.datatype();
 
         assert_eq!(datatype.class(), ExtendedDataTypeClass::Numeric);
-        assert_eq!(datatype.numeric_datatype(), <u8>::gdal_ordinal());
+        assert_eq!(datatype.numeric_datatype(), GDALDataType::GDT_Byte);
         assert_eq!(datatype.name(), "");
     }
 
