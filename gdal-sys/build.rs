@@ -34,19 +34,22 @@ pub fn write_bindings(include_paths: Vec<String>, out_path: &Path) {
             .clang_arg("-fretain-comments-from-system-headers");
     }
 
-    let bindings = builder
+    builder
         .generate()
         .expect("Unable to generate bindings")
-        .to_string();
-    let bindings = if bindings.contains("pub const GDT_UInt8: Type") {
+        .write_to_file(out_path)
+        .expect("Unable to write bindings to file");
+    let bindings = fs::read_to_string(out_path).expect("Unable to read bindings");
+    if bindings.contains("pub const GDT_UInt8: Type") {
         let (before, after) = bindings
             .split_once("pub mod GDALDataType {")
             .expect("Missing GDALDataType module in generated bindings");
-        format!("{before}pub mod GDALDataType {{\n    pub const GDT_Byte: Type = GDT_UInt8;{after}")
-    } else {
-        bindings
-    };
-    fs::write(out_path, bindings).expect("Unable to write bindings to file");
+        fs::write(
+            out_path,
+            format!("{before}pub mod GDALDataType {{\n    pub const GDT_Byte: Type = GDT_UInt8;{after}"),
+        )
+        .expect("Unable to write GDALDataType alias");
+    }
 }
 
 fn env_dir(var: &str) -> Option<PathBuf> {
