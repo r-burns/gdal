@@ -12,6 +12,8 @@ use gdal_sys::{
 use crate::errors::{GdalError, Result};
 use crate::utils::_string;
 
+const GDAL_UINT8: GDALDataType::Type = 1;
+
 /// Provides ergonomic access to functions describing [`GDALDataType`] ordinals.
 ///
 /// A [`GDALDataType`] indicates the primitive storage value of a cell/pixel in a [`RasterBand`][crate::raster::RasterBand].
@@ -32,10 +34,7 @@ pub enum GdalDataType {
     /// Unknown or unspecified type
     Unknown = GDALDataType::GDT_Unknown,
     /// Eight bit unsigned integer
-    #[cfg(not(any(all(major_ge_3, minor_ge_13), major_ge_4)))]
-    UInt8 = GDALDataType::GDT_Byte,
-    #[cfg(any(all(major_ge_3, minor_ge_13), major_ge_4))]
-    UInt8 = GDALDataType::GDT_UInt8,
+    UInt8 = GDAL_UINT8,
     /// Eight bit signed integer
     #[cfg(any(all(major_ge_3, minor_ge_7), major_ge_4))]
     Int8 = GDALDataType::GDT_Int8,
@@ -267,10 +266,7 @@ impl TryFrom<u32> for GdalDataType {
         #[allow(non_upper_case_globals)]
         match value {
             GDT_Unknown => Ok(GdalDataType::Unknown),
-            #[cfg(not(any(all(major_ge_3, minor_ge_13), major_ge_4)))]
-            GDT_Byte => Ok(GdalDataType::UInt8),
-            #[cfg(any(all(major_ge_3, minor_ge_13), major_ge_4))]
-            GDT_UInt8 => Ok(GdalDataType::UInt8),
+            GDAL_UINT8 => Ok(GdalDataType::UInt8),
             #[cfg(any(all(major_ge_3, minor_ge_7), major_ge_4))]
             GDT_Int8 => Ok(GdalDataType::Int8),
             GDT_UInt16 => Ok(GdalDataType::UInt16),
@@ -345,14 +341,7 @@ pub trait GdalType {
 /// Provides evidence `u8` is a valid [`GDALDataType`].
 impl GdalType for u8 {
     fn gdal_ordinal() -> GDALDataType::Type {
-        #[cfg(not(any(all(major_ge_3, minor_ge_13), major_ge_4)))]
-        {
-            GDALDataType::GDT_Byte
-        }
-        #[cfg(any(all(major_ge_3, minor_ge_13), major_ge_4))]
-        {
-            GDALDataType::GDT_UInt8
-        }
+        GDAL_UINT8
     }
 }
 
@@ -439,13 +428,7 @@ mod tests {
             assert_eq!(t.bits(), t.bytes() * 8, "{t}");
             let name = t.name();
             match t.gdal_ordinal() {
-                #[cfg(not(any(all(major_ge_3, minor_ge_13), major_ge_4)))]
-                GDT_Byte | GDT_UInt16 | GDT_Int16 | GDT_UInt32 | GDT_Int32 => {
-                    assert!(t.is_integer(), "{}", &name);
-                    assert!(!t.is_floating(), "{}", &name);
-                }
-                #[cfg(any(all(major_ge_3, minor_ge_13), major_ge_4))]
-                GDT_UInt8 | GDT_UInt16 | GDT_Int16 | GDT_UInt32 | GDT_Int32 => {
+                GDAL_UINT8 | GDT_UInt16 | GDT_Int16 | GDT_UInt32 | GDT_Int32 => {
                     assert!(t.is_integer(), "{}", &name);
                     assert!(!t.is_floating(), "{}", &name);
                 }
@@ -467,12 +450,7 @@ mod tests {
                 o => panic!("unknown type ordinal '{o}'"),
             }
             match t.gdal_ordinal() {
-                #[cfg(not(any(all(major_ge_3, minor_ge_13), major_ge_4)))]
-                GDT_Byte | GDT_UInt16 | GDT_UInt32 => {
-                    assert!(!t.is_signed(), "{}", &name);
-                }
-                #[cfg(any(all(major_ge_3, minor_ge_13), major_ge_4))]
-                GDT_UInt8 | GDT_UInt16 | GDT_UInt32 => {
+                GDAL_UINT8 | GDT_UInt16 | GDT_UInt32 => {
                     assert!(!t.is_signed(), "{}", &name);
                 }
                 #[cfg(all(major_ge_3, minor_ge_5))]
